@@ -1,6 +1,8 @@
 module Main where
 
+import Control.Concurrent
 import Network.Socket
+import System.IO
 
 main :: IO ()
 main = withSocketsDo $ do
@@ -13,10 +15,12 @@ main = withSocketsDo $ do
 mainLoop :: Socket -> IO ()
 mainLoop socket = do
     connection <- accept socket
-    connectionHandler connection
+    forkIO $ connectionHandler connection
     mainLoop socket
 
 connectionHandler :: (Socket, SockAddr) -> IO ()
 connectionHandler (socket, _) = do
-    send socket "Hello!\n"
-    close socket
+    ioHandle <- socketToHandle socket ReadWriteMode
+    hSetBuffering ioHandle NoBuffering
+    hPutStrLn ioHandle "Hello!"
+    hClose ioHandle
